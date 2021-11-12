@@ -1,0 +1,18 @@
+
+
+.field{
+    
+    width:20vw;
+    height:12vh;
+    background-color:  black; 
+    border-radius:10px;
+    font-size: calc(7px + 0.8vw);
+    float:left;
+    margin-left: 15px;
+    margin-top :5px;
+    color:white;
+    padding-top: 20px;
+    text-align: center;
+    font-family: "Montserrat", sans-serif;
+   
+}

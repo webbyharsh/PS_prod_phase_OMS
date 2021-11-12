@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>OMS | Registration Failed</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+
+* {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	vertical-align: baseline;
+}
+
+html {
+	height: 100%;
+	box-sizing: border-box;
+	overflow-x: hidden;
+	background-attachment: fixed;
+	font-weight: 400;
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 800
+}
+
+body {
+	padding: 0;
+	margin: 0;
+}
+
+#registration-failed {
+	position: relative;
+	height: 100vh;
+}
+
+#registration-failed .registration-failed {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	-webkit-transform: translate(-50%, -50%);
+	-ms-transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%);
+}
+
+.registration-failed {
+	max-width: 60vw;
+	width: 100%;
+	line-height: 1.4;
+	text-align: center;
+	padding-left: 15px;
+	padding-right: 15px;
+}
+
+.registration-failed .registration-failed-401 {
+	position: absolute;
+	height: 100px;
+	top: 0;
+	left: 50%;
+	-webkit-transform: translateX(-50%);
+	-ms-transform: translateX(-50%);
+	transform: translateX(-50%);
+	z-index: -1;
+}
+
+.registration-failed .registration-failed-401 h1 {
+	color: #ececec;
+	font-weight: 900;
+	font-size: 276px;
+	margin: 0px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	-webkit-transform: translate(-50%, -50%);
+	-ms-transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%);
+}
+
+.registration-failed h2 {
+	font-size: 46px;
+	color: #000;
+	font-weight: 900;
+	text-transform: uppercase;
+	margin: 0px;
+}
+
+.registration-failed p {
+	font-size: 16px;
+	color: #000;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+	margin-top: 15px;
+}
+
+.registration-failed button {
+	background: #6f42c1;
+	box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.1);
+	color: #fff;
+	text-align: center;
+	font-size: 14px;
+	letter-spacing: 4px;
+	font-weight: 600;
+	border-radius: 10px;
+	width: 240px;
+	height: 50px;
+	box-sizing: border-box;
+	margin-top: 20px;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.registration-failed button:hover {
+	opacity: 0.9;
+}
+
+.footer {
+   position: fixed;
+   height: 50px;
+   left: 0;
+   bottom: 0;
+   font-size: 14px;
+   font-weight: 600;
+   width: 100%;
+   color: #000;
+   text-align: center;
+   font-family: 'Montserrat', sans-serif;
+}
+
+
+@media only screen and (max-width: 480px) {
+	.registration-failed .registration-failed-401 h1 {
+		font-size: 162px;
+	}
+	.registration-failed h2 {
+		font-size: 20px;
+	}
+	
+	.registration-failed p {
+		font-size: 12px;
+	}
+	
+	.registration-failed {
+		max-width: 90vw;
+	}
+	
+	.footer {
+		font-size: 12px;
+	}
+}
+</style>
+
+</head>
+
+<body>
+
+	<div id="registration-failed">
+		<div class="registration-failed">
+			<div class="registration-failed-401">
+				<h1>401</h1>
+			</div>
+			<h2>We are sorry, Your registration failed!</h2>
+			<p th:text="${message}"></p>
+			<button onclick="loginPage()">BACK TO LOGIN</button>
+		</div>
+	</div>
+	
+	<div class="footer">
+	  <p>Order Management System  &copy;  Publicis Sapient</p>
+	</div>
+	
+<script th:inline="javascript">
+
+function loginPage(){
+	window.location.replace("http://44.196.252.191/login");
+}
+
+</script>
+
+</body>
+
+</html>

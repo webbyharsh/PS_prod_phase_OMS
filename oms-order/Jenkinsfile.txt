@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+    
+    environment {
+        registry = "298018028000.dkr.ecr.us-east-1.amazonaws.com/oms-order"
+        AWS_DEFAULT_REGION = "us-east-1"
+    }
+
+
+    stages {
+        stage('Package Build') {
+            steps{
+
+                sh "pwd"
+                sh "/opt/maven/bin/mvn package -Denv=$environment -Ddb.username=$postgresUsername -Ddb.password=$postgresPassword -Dkey=$accessTokenKey -Ddb.url=$dbUrl -Dorder.ack.api=$orderUrl -Dfill.api=$fillUrl -Dexchange.server.url=$exchangeUrl -Dlogging.file.path=$logPath"
+            }
+        }
+    stage('SonarQube analysis') {
+        steps{
+            withSonarQubeEnv('DojoSonar')
+            {
+                sh '/opt/maven/bin/mvn sonar:sonar   -Dsonar.projectKey=omsr'
+            }
+        }
+    }
+    stage('Building image') {
+        steps{
+                script {
+                //  dockerImage = docker.build registry
+                sh 'docker build -t oms-order .'
+                sh 'docker tag oms-order:latest 298018028000.dkr.ecr.us-east-1.amazonaws.com/oms-order:latest'
+                }
+        }
+    }
+    stage('Pushing to ECR') {
+        steps{   
+            withCredentials([aws(accessKeyVariable:'AWS_ACCESS_KEY_ID',credentialsId:'AWS',secretKeyVariable:'AWS_SECRET_ACCESS_KEY')]) {
+            script {
+                    sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 298018028000.dkr.ecr.us-east-1.amazonaws.com'
+                    sh 'docker push 298018028000.dkr.ecr.us-east-1.amazonaws.com/oms-order:latest'
+                }
+        }
+            
+        }
+        }
+    stage('ECS Service Deallocation to 0') {
+        steps{   
+            withCredentials([aws(accessKeyVariable:'AWS_ACCESS_KEY_ID',credentialsId:'AWS',secretKeyVariable:'AWS_SECRET_ACCESS_KEY')]) {
+            script {
+                    sh 'aws ecs update-service --service order-service  --cluster oms --desired-count 0'
+                        timeout(time: 10, unit: 'MINUTES') {
+                        waitUntil {
+                            sh "aws ecs describe-services --service order-service  --cluster oms  > .amazon-ecs-service-status.json"
+            
+                            // parse `describe-services` output
+                            def ecsServicesStatusAsJson = readFile(".amazon-ecs-service-status.json")
+                            def ecsServicesStatus = new groovy.json.JsonSlurper().parseText(ecsServicesStatusAsJson)
+                            println "$ecsServicesStatus"
+                            def ecsServiceStatus = ecsServicesStatus.services[0]
+                            return ecsServiceStatus.get('runningCount') == 0 && ecsServiceStatus.get('status') == "ACTIVE"
+                        }
+                    }
+                }
+        }
+            
+        }
+        }
+    stage('ECS Service Allocation to 1') {
+        steps{   
+            withCredentials([aws(accessKeyVariable:'AWS_ACCESS_KEY_ID',credentialsId:'AWS',secretKeyVariable:'AWS_SECRET_ACCESS_KEY')]) {
+            script {
+                    sh 'aws ecs update-service --service order-service  --cluster oms --desired-count 1'
+                    timeout(time: 10, unit: 'MINUTES') {
+                    waitUntil {
+                        sh "aws ecs describe-services --service order-service  --cluster oms  > .amazon-ecs-service-status.json"
+        
+                        // parse `describe-services` output
+                        def ecsServicesStatusAsJson = readFile(".amazon-ecs-service-status.json")
+                        def ecsServicesStatus = new groovy.json.JsonSlurper().parseText(ecsServicesStatusAsJson)
+                        println "$ecsServicesStatus"
+                        def ecsServiceStatus = ecsServicesStatus.services[0]
+                        return ecsServiceStatus.get('runningCount') == 0 && ecsServiceStatus.get('status') == "ACTIVE"
+                    }
+                }
+                }
+        }
+            
+        }
+        }
+    }
+    
+    post{
+        unstable {
+            mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in oms-order pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'order service Pipeline Unstable Alert', to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+        aborted {
+                mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in oms-order pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'order service Pipeline Aborted', to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+        failure {
+                mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in oms-order pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'order service Pipeline Build Failure Alert', to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+        success {
+            mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in oms-order pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: "order service Pipeline build SUCCESSFULL", to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+	}
+}

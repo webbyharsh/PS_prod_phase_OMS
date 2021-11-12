@@ -1,0 +1,110 @@
+
+#custom-container{
+    text-align: center;
+    background-color:white;
+   
+    padding-bottom: 1vh;
+   
+    box-sizing: border-box;
+    width: max-content;
+    margin: auto;
+    margin-top: 5vh;
+   
+    
+}
+
+.innercontainer:after{
+    content:"";
+    display: block;
+    clear: both;
+}
+
+
+.innercontainer{
+   
+    width: 90vw;
+    margin-left: 5vw;
+  
+
+}
+
+
+
+.buttons{
+   
+    width: 50vw;
+    margin:auto;
+    margin-top: 2.5vh;
+  
+
+
+    
+}
+.title{
+    font-size: calc(16px + 3vw);
+    color:black;
+      
+}
+
+.backIcon
+{
+    
+    margin-right: 3vw;
+   
+}
+.orderdetailheader span{
+    font-size: calc(16px + .5vw);
+}
+.backIcon:hover
+{
+    cursor: pointer;
+}
+.total{
+    font-size: calc(10px + 1vw);
+    color :green;
+  
+    
+}
+
+.stock{
+    font-size: calc(16px + 2vw);
+    color :black;
+    margin-right: 1vw;
+    margin-left :3.5vw;
+    padding:5px;
+    text-decoration-line: underline;
+}
+
+
+
+.btns {  border-radius: 2px ; 
+     border: 1px solid #6f42c1 ; 
+      background-color: #6f42c1 ; 
+       color: #ffffff; 
+        font-size: 12px;  
+       font-weight: bold; 
+        padding: 12px 45px; 
+     letter-spacing:  1px;
+     margin-right: 5px;
+     border-width: 1px;
+     margin-left: 5px;
+    }
+
+.btnscancel {   border-radius: 5px !important;
+    border: 1px solid red !important;
+    background-color: red !important;
+    color: #ffffff !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    padding: 12px 45px !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+    transition: transform 80ms ease-in !important;
+    margin: 10px;
+       }
+
+.btns:disabled {
+    border: 1px solid darkgrey !important; 
+    background-color: darkgrey !important;
+    margin: 10px;
+}

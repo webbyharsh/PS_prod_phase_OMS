@@ -1,0 +1,9 @@
+
+.btns
+{  border-radius: 8px !important; 
+   border: 1px solid #6f42c1 !important;   
+   background-color: #6f42c1 !important;  
+   color: #ffffff;  font-size: 12px; 
+   font-weight: bold;  padding: 12px 45px;  
+   letter-spacing:  1px;
+}

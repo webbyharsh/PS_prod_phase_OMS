@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+    stages{
+        stage('Preparation') {
+        steps{
+            echo "oms-user microservice"
+            sh 'git show -s --pretty=%an'
+            }
+        }
+        stage('MS Packaging'){
+            steps{
+                sh '/opt/maven/bin/mvn package -Denv=$environment -Dkey=signingKey -Ddb.username=$postgresUsername -Ddb.password=$postgresPassword'
+            }     
+        }
+		stage('SonarQube Analysis'){
+			steps{
+                withSonarQubeEnv('DojoSonar'){
+                    sh '/opt/maven/bin/mvn sonar:sonar -Dsonar.projectKey=omr'
+                }
+			}
+		}
+        // stage('Quality Gate'){
+        //     steps{
+        //         waitForQualityGate abortPipeline: true
+        //     }
+        // }
+    }
+    post{
+        unstable {
+            mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in User service Pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'User service Pipeline Unstable Alert', to: 'kalwaniprashant.lachhu@publicissapient.com', cc: 'sanjana@publicissapient.com'
+        }
+        aborted {
+                mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in User service Pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'User service Pipeline Aborted', to: 'kalwaniprashant.lachhu@publicissapient.com', cc: 'sanjana@publicissapient.com'
+        }
+        failure {
+                mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in User service Pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'User service Pipeline Build Failure Alert', to: 'kalwaniprashant.lachhu@publicissapient.com', cc: 'sanjana@publicissapient.com'
+        }
+        success {
+            mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in User service Pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: "User service Pipeline build SUCCESSFULL", to: 'kalwaniprashant.lachhu@publicissapient.com', cc: 'sanjana@publicissapient.com'
+        }
+	}
+}

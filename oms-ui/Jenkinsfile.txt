@@ -1,0 +1,132 @@
+pipeline {
+    agent any
+
+    environment {
+        registry = "298018028000.dkr.ecr.us-east-1.amazonaws.com/oms-ui"
+        AWS_DEFAULT_REGION = "us-east-1"
+    }
+
+
+    stages {
+        stage('Dependency Resolution') {
+            steps{
+                nodejs('Node-16.6.1'){
+                    sh 'yarn install --ignore-engines'
+				}
+            }
+        }
+        stage('Package Build and Testing'){
+            steps{
+				nodejs('Node-16.6.1'){
+                    sh 'CI=false REACT_APP_STAGE=production yarn run build'
+                    sh 'yarn test'
+				}
+            }     
+        }
+        stage('SonarQube Analysis'){
+			steps{
+				nodejs('Node-16.6.1'){
+				sh 'sudo /home/ec2-user/.sonar/native-sonar-scanner/sonar-scanner-4.5.0.2216-linux/bin/sonar-scanner -Dsonar.host.url=https://tools.publicis.sapient.com/sonar -Dsonar.login=$sonarLogin -Dsonar.password=$sonarPassword -Dsonar.projectKey=omsi -Dsonar.projectName=oms-ui -Dsonar.sources=\"./\" -Dsonar.language=js -Dsonar.exclusions=\"**/__tests__/**,./src/reportWebVitals.js,./src/setupTests.js,./src/Components/Navbar/**\" -Dsonar.tests=\"./src/__tests__\" -Dsonar.test.inclusions=\"./src/__tests__/**/*.test.jsx,./src/__tests__/**/*.test.js\" -Dsonar.javascript.lcov.reportPaths=\"coverage/lcov.info\" -Dsonar.testExecutionReportPaths=\"reports/test-report.xml\"'
+				}
+		}
+        stage('Building image') {
+            steps{
+                script {
+                //  dockerImage = docker.build registry
+                    sh 'docker build -t oms-ui .'
+                    sh 'docker tag oms-ui:latest 298018028000.dkr.ecr.us-east-1.amazonaws.com/oms-ui:latest'
+                }
+            }
+        }
+        stage('Pushing to ECR') {
+         steps{   
+             withCredentials([aws(accessKeyVariable:'AWS_ACCESS_KEY_ID',credentialsId:'AWS',secretKeyVariable:'AWS_SECRET_ACCESS_KEY')]) {
+                script {
+                        sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 298018028000.dkr.ecr.us-east-1.amazonaws.com'
+                        sh 'docker push 298018028000.dkr.ecr.us-east-1.amazonaws.com/oms-ui:latest'
+                 }
+            }
+             
+            }
+        }
+            stage('ECS Service Deallocation to 0') {
+         steps{   
+             withCredentials([aws(accessKeyVariable:'AWS_ACCESS_KEY_ID',credentialsId:'AWS',secretKeyVariable:'AWS_SECRET_ACCESS_KEY')]) {
+                script {
+                        sh 'aws ecs update-service --service ui-service  --cluster oms --desired-count 0'
+                         timeout(time: 10, unit: 'MINUTES') {
+                            waitUntil {
+                                sh "aws ecs describe-services --service ui-service  --cluster oms  > .amazon-ecs-service-status.json"
+                
+                                // parse `describe-services` output
+                                def ecsServicesStatusAsJson = readFile(".amazon-ecs-service-status.json")
+                                def ecsServicesStatus = new groovy.json.JsonSlurper().parseText(ecsServicesStatusAsJson)
+                                println "$ecsServicesStatus"
+                                def ecsServiceStatus = ecsServicesStatus.services[0]
+                                return ecsServiceStatus.get('runningCount') == 0 && ecsServiceStatus.get('status') == "ACTIVE"
+                            }
+                        }
+                 }
+            }
+             
+            }
+          }
+          stage('ECS Service Allocation to 1') {
+         steps{   
+             withCredentials([aws(accessKeyVariable:'AWS_ACCESS_KEY_ID',credentialsId:'AWS',secretKeyVariable:'AWS_SECRET_ACCESS_KEY')]) {
+                script {
+                        sh 'aws ecs update-service --service ui-service  --cluster oms --desired-count 1'
+                        timeout(time: 10, unit: 'MINUTES') {
+                        waitUntil {
+                            sh "aws ecs describe-services --service ui-service  --cluster oms  > .amazon-ecs-service-status.json"
+            
+                            // parse `describe-services` output
+                            def ecsServicesStatusAsJson = readFile(".amazon-ecs-service-status.json")
+                            def ecsServicesStatus = new groovy.json.JsonSlurper().parseText(ecsServicesStatusAsJson)
+                            println "$ecsServicesStatus"
+                            def ecsServiceStatus = ecsServicesStatus.services[0]
+                            return ecsServiceStatus.get('runningCount') == 0 && ecsServiceStatus.get('status') == "ACTIVE"
+                        }
+                    }
+                 }
+            }
+             
+            }
+          }
+    }
+    }
+    post{
+        unstable {
+            mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in UI service pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'UI service Pipeline Unstable Alert', to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+        aborted {
+                mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in UI service pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'UI service Pipeline Aborted', to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+        failure {
+                mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in UI service pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: 'UI service Pipeline Build Failure Alert', to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+        success {
+            mail body: """${env.JOB_NAME} - Build # ${env.BUILD_NUMBER}:
+
+            Check console output at ${env.BUILD_URL} to view the results.
+
+            This email has been sent to you because your email was listed in UI service pipeline.""", 
+            from: 'sanjana@publicissapient.com', subject: "UI service Pipeline build SUCCESSFULL", to: 'sanjana@publicissapient.com', cc: 'aditya.suman@publicissapient.com'
+        }
+	}
+}

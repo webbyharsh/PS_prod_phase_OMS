@@ -1,0 +1,67 @@
+@import url("https://fonts.googleapis.com/css?family=Montserrat:400,800");
+
+* {
+  box-sizing: border-box;
+}
+.customBody {
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  font-family: "Montserrat", sans-serif;
+  height: 100vh;
+  margin: -20px 0 50px;
+}
+
+input {
+  border-radius: 10px !important;
+}
+
+select {
+  border-radius: 10px !important;
+}
+.inp {
+  border-radius: 10px !important;
+}
+
+.btns {
+  border-radius: 8px !important;
+  border: 1px solid #6f42c1 !important;
+  background-color: #6f42c1 !important;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 12px 45px ;
+  margin: 5px !important;
+  letter-spacing: 1px;
+}
+
+.form-container {
+  background-color: #e0d5e3;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  position: relative;
+  top: +40px;
+  left: +150px;
+  width: 50%;
+  border-left: -10px;
+  border-radius: 10px;
+  height: 98%;
+}
+
+#header {
+  background-color: black;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  color: white;
+}
+@media only screen and (min-width: 600px) {
+  .mobile {
+    width: 80%;
+  }
+}
+@media only screen and (max-width: 600px) {
+  .mobile {
+    width: 100%;
+  }
+}
